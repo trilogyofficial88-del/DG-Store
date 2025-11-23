@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Topup Mobile Legends – Anggi D Gamer Store</title>
+    <link rel="stylesheet" href="mlbb.css" />
+</head>
+<body>
+
+    <section class="topup-header">
+        <h1>Topup Mobile Legends</h1>
+        <p>Masukkan User ID & Server ID lalu pilih jumlah Diamond</p>
+    </section>
+
+    <section class="topup-form">
+        <div class="input-box">
+            <label>User ID</label>
+            <input type="text" id="userID" placeholder="123456789" />
+        </div>
+
+        <div class="input-box">
+            <label>Server ID</label>
+            <input type="text" id="serverID" placeholder="1234" />
+        </div>
+
+        <div class="input-box">
+            <label>Username (Otomatis)</label>
+            <input type="text" id="username" placeholder="Menunggu cek nickname..." readonly />
+        </div>
+
+        <p id="nickStatus" class="nick-status"></p>
+    </section>
+
+    <section class="topup-list">
+        <h2>Pilih Nominal Diamond</h2>
+        <div id="productList" class="nominal-grid">
+            <p>Memuat daftar produk...</p>
+        </div>
+    </section>
+
+    <section class="topup-pay">
+        <h2>Pilih Pembayaran</h2>
+
+        <div class="pay-grid">
+            <div class="pay-card" data-pay="DANA">DANA</div>
+            <div class="pay-card" data-pay="QRIS">QRIS</div>
+            <div class="pay-card" data-pay="BNI">BNI</div>
+        </div>
+
+        <button class="buy-btn" id="buyBtn">Lanjutkan Pembelian</button>
+    </section>
+
+    <footer>© 2025 Anggi D Gamer Store – All Rights Reserved</footer>
+
+<script>
+/* ============================================================
+   LOAD PRODUCT LIST (VIP-RESELLER)
+============================================================ */
+async function loadProducts() {
+    const list = document.getElementById("productList");
+    list.innerHTML = "<p>Memuat daftar produk...</p>";
+
+    try {
+        const response = await fetch("/api/services", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ game: "Mobile Legends A" }) // FIX FINAL
+        });
+
+        const result = await response.json();
+        console.log("💰 Daftar produk:", result);
+
+        if (!result.result || !Array.isArray(result.data)) {
+            list.innerHTML = "<p>Produk tidak ditemukan</p>";
+            return;
+        }
+
+        list.innerHTML = "";
+
+        result.data.forEach(item => {
+            const price = Number(item.price_basic || item.price || 0);
+            const name = item.name || "Produk";
+
+            list.innerHTML += `
+                <div class="nominal-card" data-value="${name}" data-price="${price}" data-id="${item.code}">
+                    <h3>${name}</h3>
+                    <p>Rp ${price.toLocaleString("id-ID")}</p>
+                </div>
+            `;
+        });
+
+        enableProductSelect();
+    } catch (err) {
+        console.error("❌ Error memuat produk:", err);
+        list.innerHTML = "<p>Gagal memuat produk</p>";
+    }
+}
+
+function enableProductSelect() {
+    const cards = document.querySelectorAll(".nominal-card");
+
+    cards.forEach(card => {
+        card.addEventListener("click", () => {
+            cards.forEach(c => c.classList.remove("active"));
+            card.classList.add("active");
+
+            selectedNominal = card.dataset.value;
+            selectedPrice = card.dataset.price;
+            selectedID = card.dataset.id;
+        });
+    });
+}
+
+let selectedNominal = "";
+let selectedPrice = "";
+let selectedID = "";
+
+/* ============================================================
+    PAYMENT SELECT
+============================================================ */
+const payCards = document.querySelectorAll(".pay-card");
+let selectedPayment = "";
+
+payCards.forEach(card => {
+    card.addEventListener("click", () => {
+        payCards.forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+        selectedPayment = card.dataset.pay;
+    });
+});
+
+/* ============================================================
+    CHECK NICKNAME - VIP-RESELLER (ROBUST PARSER)
+============================================================ */
+
+let nicknameTimeout = null;
+
+function debouncedCheckNickname() {
+    clearTimeout(nicknameTimeout);
+    nicknameTimeout = setTimeout(checkNickname, 350);
+}
+
+/**
+ * Robust nickname extractor:
+ * - handles responses like: "\"Achiiwww\"_"
+ * - extracts inner quoted value if present
+ * - preserves trailing underscores or digits after the closing quote
+ * - removes backslashes and stray quotes
+ */
+ function extractNicknameFromRaw(raw) {
+    if (raw == null) return null;
+
+    // ubah ke string
+    let s = String(raw);
+
+    // convert escaped quotes \" → "
+    s = s.replace(/\\"/g, '"');
+
+    // jangan hapus tanda kutip!
+    // jangan hapus underscore!
+    // jangan ekstrak bagian dalam!
+
+    return s.trim();
+}
+
+
+async function checkNickname() {
+    const uid = document.getElementById("userID").value.trim();
+    const sid = document.getElementById("serverID").value.trim();
+    const status = document.getElementById("nickStatus");
+    const usernameInput = document.getElementById("username");
+
+    if (!uid || !sid) {
+        status.textContent = "";
+        usernameInput.value = "";
+        return;
+    }
+
+    status.style.color = "#00bfff";
+    status.textContent = "🔍 Mengecek nickname...";
+
+    try {
+        const response = await fetch("/api/get-nickname", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                code: "mobile-legends",
+                target: uid,
+                additional_target: sid
+            })
+        });
+
+        const result = await response.json();
+        console.log("🔍 Nickname Result:", result);
+
+        // raw data from VIP-Reseller
+        const raw = result?.data;
+
+        if (!result.result || raw == null) {
+            status.style.color = "red";
+            status.textContent = "❌ ID tidak valid";
+            usernameInput.value = "";
+            return;
+        }
+
+        // extract and clean nickname
+        const nickname = extractNicknameFromRaw(raw);
+
+        if (!nickname) {
+            status.style.color = "red";
+            status.textContent = "❌ ID tidak valid";
+            usernameInput.value = "";
+            return;
+        }
+
+        usernameInput.value = nickname;
+        status.style.color = "#00ff88";
+        status.textContent = "✔ Nickname ditemukan";
+
+    } catch (err) {
+        console.error("❌ Nickname Error:", err);
+        status.style.color = "red";
+        status.textContent = "❌ Gagal cek nickname";
+        usernameInput.value = "";
+    }
+}
+
+document.getElementById("userID").addEventListener("input", debouncedCheckNickname);
+document.getElementById("serverID").addEventListener("input", debouncedCheckNickname);
+
+/* ============================================================
+    BUY
+============================================================ */
+document.getElementById("buyBtn").addEventListener("click", () => {
+    const uid = document.getElementById("userID").value;
+    const sid = document.getElementById("serverID").value;
+    const username = document.getElementById("username").value;
+
+    if (!uid || !sid) return alert("Isi User ID dan Server ID!");
+    if (!selectedNominal) return alert("Pilih nominal diamond!");
+    if (!selectedPayment) return alert("Pilih metode pembayaran!");
+
+    const playerID = `${uid} (${sid})`;
+
+    const url = `checkout.html?game=mlbb&id=${encodeURIComponent(playerID)}&username=${encodeURIComponent(username)}&nominal=${encodeURIComponent(selectedNominal)}&price=${encodeURIComponent(selectedPrice)}&pay=${encodeURIComponent(selectedPayment)}&service_id=${encodeURIComponent(selectedID)}`;
+
+    window.location.href = url;
+});
+
+loadProducts();
+</script>
+
+</body>
+</html>

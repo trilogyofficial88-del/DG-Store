@@ -1,0 +1,52 @@
+body {
+    background: #05030f;
+    color: white;
+    font-family: 'Rajdhani', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.checkout-box {
+    width: 90%;
+    max-width: 480px;
+    margin: 60px auto;
+    padding: 25px;
+    background: #0f0a1e;
+    border: 2px solid #00eaff;
+    border-radius: 12px;
+    box-shadow: 0 0 12px #00eaff;
+}
+
+.checkout-box h1 {
+    text-align: center;
+    font-family: 'Orbitron', sans-serif;
+    text-shadow: 0 0 12px #00eaff;
+    margin-bottom: 25px;
+}
+
+.info p {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+span {
+    color: #00eaff;
+}
+
+.pay-btn {
+    width: 100%;
+    padding: 15px;
+    background: #00eaff;
+    border: none;
+    border-radius: 10px;
+    font-size: 20px;
+    cursor: pointer;
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+.pay-btn:hover {
+    background: #ff00f7;
+    color: white;
+    box-shadow: 0 0 18px #ff00f7;
+}

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topup BloodStrike – Anggi D Gamer Store</title>
+    <link rel="stylesheet" href="bloodstrike.css">
+</head>
+<body>
+
+<section class="topup-header">
+    <h1>Topup BloodStrike</h1>
+    <p>Masukkan ID BloodStrike kamu</p>
+</section>
+
+<section class="topup-form">
+    <div class="input-box">
+        <label>User ID BloodStrike</label>
+        <input type="text" id="playerID" placeholder="Masukkan User ID...">
+    </div>
+</section>
+
+<section class="topup-list">
+    <h2>Pilih Nominal Gold</h2>
+    <div id="productList" class="nominal-grid">
+        <p>Memuat daftar produk...</p>
+    </div>
+</section>
+
+<section class="topup-pay">
+    <h2>Pilih Pembayaran</h2>
+    <div class="pay-grid">
+        <div class="pay-card" data-pay="DANA">DANA</div>
+        <div class="pay-card" data-pay="QRIS">QRIS</div>
+        <div class="pay-card" data-pay="BNI">BNI</div>
+    </div>
+    <button class="buy-btn" id="buyBtn">Lanjutkan Pembelian</button>
+</section>
+
+<footer>
+    © 2025 Anggi D Gamer Store – All Rights Reserved
+</footer>
+
+<script>
+// ==================== GET PRODUCT FROM API ====================
+async function loadProducts() {
+    const list = document.getElementById("productList");
+    list.innerHTML = "<p>Memuat daftar produk...</p>";
+
+    try {
+        const response = await fetch("/api/services", { 
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ game: "Blood Strike" }) 
+        });
+
+        const result = await response.json();
+        console.log("Response Data:", result);
+
+        if (result.result === false) {
+            list.innerHTML = `<p>${result.message || "Produk tidak ditemukan"}</p>`;
+            return;
+        }
+
+        if (!Array.isArray(result.data) || result.data.length === 0) {
+            list.innerHTML = "<p>Produk tidak ditemukan</p>";
+            return;
+        }
+
+        list.innerHTML = "";
+
+        result.data.forEach(item => {
+            const name = item.name || item.product_name || "Produk";
+            const rawPrice = Number(item.price_basic || item.price || 0);
+
+            list.innerHTML += `
+                <div class="nominal-card" 
+                    data-value="${name}" 
+                    data-price="${rawPrice}" 
+                    data-id="${item.code}">
+                    
+                    <h3>${name}</h3>
+                    <p>Rp ${rawPrice.toLocaleString("id-ID")}</p>
+                </div>
+            `;
+        });
+
+        enableProductSelect();
+
+    } catch (err) {
+        console.error("Error:", err);
+        list.innerHTML = "<p>Terjadi kesalahan mengambil produk</p>";
+    }
+}
+
+// ================== SELECT PRODUCT ==================
+function enableProductSelect() {
+    const cards = document.querySelectorAll(".nominal-card");
+
+    cards.forEach(card => {
+        card.addEventListener("click", () => {
+            cards.forEach(c => c.classList.remove("active"));
+            card.classList.add("active");
+
+            selectedNominal = card.dataset.value;
+            selectedPrice = card.dataset.price;
+            selectedID = card.dataset.id;
+        });
+    });
+}
+
+let selectedNominal = "";
+let selectedPrice = "";
+let selectedID = "";
+
+// ================== PAYMENT SELECT ==================
+const payCards = document.querySelectorAll(".pay-card");
+let selectedPayment = "";
+
+payCards.forEach(card => {
+    card.addEventListener("click", () => {
+        payCards.forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+        selectedPayment = card.dataset.pay;
+    });
+});
+
+// ================== CHECKOUT ==================
+document.getElementById("buyBtn").addEventListener("click", () => {
+    const id = document.getElementById("playerID").value;
+
+    if (!id) return alert("Isi User ID terlebih dahulu!");
+    if (!selectedNominal) return alert("Pilih nominal Gold!");
+    if (!selectedPayment) return alert("Pilih metode pembayaran!");
+
+    const url = `checkout.html?game=bloodstrike&id=${encodeURIComponent(id)}&nominal=${encodeURIComponent(selectedNominal)}&price=${encodeURIComponent(selectedPrice)}&pay=${encodeURIComponent(selectedPayment)}&service_id=${encodeURIComponent(selectedID)}`;
+
+    window.location.href = url;
+});
+
+// ================== LOAD ON START ==================
+loadProducts();
+</script>
+
+</body>
+</html>

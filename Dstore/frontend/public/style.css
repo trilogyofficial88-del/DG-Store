@@ -1,0 +1,156 @@
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background: #0a0014;
+    color: white;
+}
+
+/* SLIDER */
+.slider {
+    position: relative;
+    height: 330px;
+    overflow: hidden;
+    border-bottom: 3px solid #9a00ff;
+    box-shadow: 0 0 25px #7f00ff;
+}
+
+.slides {
+    display: flex;
+    width: 300%;
+    height: 100%;
+    animation: slide 9s infinite;
+}
+
+.slides img {
+    width: 100%;
+    object-fit: cover;
+    filter: brightness(0.7);
+}
+
+@keyframes slide {
+    0%, 30%   { transform: translateX(0%); }
+    35%, 65%  { transform: translateX(-100%); }
+    70%, 100% { transform: translateX(-200%); }
+}
+
+/* Overlay */
+.slider-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #000000bb, #7f00ff33, #000000bb);
+}
+
+/* Slider Text */
+.slider-title {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.slider-title h1 {
+    font-size: 2.4rem;
+    text-shadow: 0 0 15px #bf00ff;
+}
+
+.slider-title p {
+    font-size: 1rem;
+    margin-top: 10px;
+    text-shadow: 0 0 10px #ff00ea;
+}
+
+/* GAME SECTION */
+.games {
+    text-align: center;
+    padding: 50px 20px;
+}
+
+.games h2 {
+    font-size: 1.8rem;
+    text-shadow: 0 0 10px #ff00ff;
+}
+
+.game-grid {
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+}
+
+.game-card {
+    background: #1b002e;
+    border: 2px solid #7f00ff;
+    border-radius: 12px;
+    padding: 15px;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.game-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 20px #9a00ff;
+}
+
+.game-card img {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.game-card h3 {
+    margin: 10px 0 5px;
+    font-size: 1.1rem;
+}
+
+.game-card p {
+    color: #ff00ea;
+    font-size: 0.9rem;
+}
+
+/* PAYMENT SECTION */
+.payments {
+    text-align: center;
+    padding: 50px 20px;
+}
+
+.payments h2 {
+    font-size: 1.6rem;
+    text-shadow: 0 0 10px #a300ff;
+}
+
+.pay-list {
+    margin-top: 25px;
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+}
+
+.pay-list img {
+    height: 45px;
+    filter: drop-shadow(0 0 10px #ff00ff);
+}
+
+/* FOOTER */
+footer {
+    margin-top: 40px;
+    text-align: center;
+    padding: 20px;
+    background: #0e001b;
+    border-top: 2px solid #7f00ff;
+    text-shadow: 0 0 8px #ff00f7;
+}
+
+/* MOBILE FIXES */
+@media (max-width: 768px) {
+    .game-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .slider {
+        height: 230px;
+    }
+    .slider-title h1 {
+        font-size: 1.6rem;
+    }
+}

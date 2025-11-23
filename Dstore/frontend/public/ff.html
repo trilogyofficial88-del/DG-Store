@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topup Free Fire – Anggi D Gamer Store</title>
+    <link rel="stylesheet" href="ff.css">
+</head>
+<body>
+
+<section class="topup-header">
+    <h1>Topup Free Fire</h1>
+    <p>Masukkan Player ID dan pilih jumlah Diamond</p>
+</section>
+
+<section class="topup-form">
+
+    <div class="input-box">
+        <label>Player ID</label>
+        <input type="text" id="playerID" placeholder="Masukkan Player ID kamu...">
+    </div>
+
+    <div class="input-box">
+        <label>Nickname (Otomatis)</label>
+        <input type="text" id="nickname" placeholder="Menunggu cek nickname..." readonly>
+    </div>
+
+    <p id="nickStatus" class="nick-status"></p>
+
+</section>
+
+<section class="topup-list">
+    <h2>Pilih Nominal Diamond FF</h2>
+
+    <div id="productList" class="nominal-grid">
+        <p>Memuat daftar produk...</p>
+    </div>
+</section>
+
+<section class="topup-pay">
+    <h2>Pilih Pembayaran</h2>
+
+    <div class="pay-grid">
+        <div class="pay-card" data-pay="DANA">DANA</div>
+        <div class="pay-card" data-pay="QRIS">QRIS</div>
+        <div class="pay-card" data-pay="BNI">BNI</div>
+    </div>
+
+    <button class="buy-btn" id="buyBtn">Lanjutkan Pembelian</button>
+</section>
+
+<footer>
+    © 2025 Anggi D Gamer Store – All Rights Reserved
+</footer>
+
+<script>
+/* ============================================================
+   LOAD PRODUCTS (Free Fire)
+============================================================ */
+async function loadProducts() {
+    const list = document.getElementById("productList");
+    list.innerHTML = "<p>Memuat daftar produk...</p>";
+
+    try {
+        const response = await fetch("/api/services", { 
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ game: "Free Fire" }) 
+        });
+
+        const result = await response.json();
+        console.log("Response Data:", result);
+
+        if (!result.result) {
+            list.innerHTML = `<p>${result.message || "Produk tidak ditemukan"}</p>`;
+            return;
+        }
+
+        if (!Array.isArray(result.data) || result.data.length === 0) {
+            list.innerHTML = "<p>Produk tidak ditemukan</p>";
+            return;
+        }
+
+        list.innerHTML = "";
+
+        result.data.forEach(item => {
+            const name = item.name || "Produk";
+            const rawPrice = Number(item.price_basic || item.price || 0);
+
+            list.innerHTML += `
+                <div class="nominal-card" 
+                    data-value="${name}" 
+                    data-price="${rawPrice}" 
+                    data-id="${item.code}">
+                    
+                    <h3>${name}</h3>
+                    <p>Rp ${rawPrice.toLocaleString("id-ID")}</p>
+                </div>
+            `;
+        });
+
+        enableProductSelect();
+
+    } catch (err) {
+        console.error("Error:", err);
+        list.innerHTML = "<p>Terjadi kesalahan mengambil produk</p>";
+    }
+}
+
+/* ============================================================
+   SELECT PRODUCT
+============================================================ */
+function enableProductSelect() {
+    const cards = document.querySelectorAll(".nominal-card");
+
+    cards.forEach(card => {
+        card.addEventListener("click", () => {
+            cards.forEach(c => c.classList.remove("active"));
+            card.classList.add("active");
+
+            selectedNominal = card.dataset.value;
+            selectedPrice = card.dataset.price;
+            selectedID = card.dataset.id;
+        });
+    });
+}
+
+let selectedNominal = "";
+let selectedPrice = "";
+let selectedID = "";
+
+/* ============================================================
+   PAYMENT SELECT
+============================================================ */
+const payCards = document.querySelectorAll(".pay-card");
+let selectedPayment = "";
+
+payCards.forEach(card => {
+    card.addEventListener("click", () => {
+        payCards.forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+        selectedPayment = card.dataset.pay;
+    });
+});
+
+/* ============================================================
+   CHECK NICKNAME (VIP Reseller) — Free Fire
+============================================================ */
+let ffTimeout = null;
+
+function debounceFF() {
+    clearTimeout(ffTimeout);
+    ffTimeout = setTimeout(checkNicknameFF, 350);
+}
+
+async function checkNicknameFF() {
+    const uid = document.getElementById("playerID").value.trim();
+    const status = document.getElementById("nickStatus");
+    const nickField = document.getElementById("nickname");
+
+    if (!uid) {
+        status.textContent = "";
+        nickField.value = "";
+        return;
+    }
+
+    status.style.color = "#00bfff";
+    status.textContent = "🔍 Mengecek nickname...";
+
+    try {
+        const response = await fetch("/api/get-nickname", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                code: "free-fire",
+                target: uid
+            })
+        });
+
+        const result = await response.json();
+        console.log("FF Nick Response:", result);
+
+        // DATA DARI VIP-RESELLER LANGSUNG STRING
+        const nickname = result.data; 
+
+        if (!result.result || !nickname) {
+            nickField.value = "";
+            status.style.color = "red";
+            status.textContent = "❌ Player ID tidak valid";
+            return;
+        }
+
+        // TAMPILKAN SESUAI ASLI (TERMASUK PETIK)
+        nickField.value = nickname;
+
+        status.style.color = "#00ff88";
+        status.textContent = "✔ Nickname ditemukan";
+
+    } catch (err) {
+        console.error("FF Nick Error:", err);
+        status.style.color = "red";
+        status.textContent = "❌ Gagal cek nickname";
+        nickField.value = "";
+    }
+}
+
+document.getElementById("playerID").addEventListener("input", debounceFF);
+
+/* ============================================================
+   CHECKOUT
+============================================================ */
+document.getElementById("buyBtn").addEventListener("click", () => {
+    const uid = document.getElementById("playerID").value;
+    const username = document.getElementById("nickname").value;
+
+    if (!uid) return alert("Isi Player ID dulu!");
+    if (!selectedNominal) return alert("Pilih nominal Diamond!");
+    if (!selectedPayment) return alert("Pilih metode pembayaran!");
+
+    const url = `checkout.html?game=freefire&id=${encodeURIComponent(uid)}&username=${encodeURIComponent(username)}&nominal=${encodeURIComponent(selectedNominal)}&price=${encodeURIComponent(selectedPrice)}&pay=${encodeURIComponent(selectedPayment)}&service_id=${encodeURIComponent(selectedID)}`;
+
+    window.location.href = url;
+});
+
+/* ============================================================
+   LOAD ON START
+============================================================ */
+loadProducts();
+</script>
+
+</body>
+</html>

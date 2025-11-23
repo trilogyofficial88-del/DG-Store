@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout – Anggi D Gamer Store</title>
+    <link rel="stylesheet" href="checkout.css">
+</head>
+<body>
+
+<section class="checkout-box">
+
+    <h1>Checkout Pembelian</h1>
+
+    <div class="info">
+        <p><b>Game:</b> <span id="game">-</span></p>
+        <p><b>ID:</b> <span id="userid">-</span></p>
+        <p><b>Zone (opsional):</b> <span id="zone">-</span></p>
+        <p><b>Pilihan Produk:</b> <span id="nominal">-</span></p>
+        <p><b>Harga:</b> <span id="price">-</span></p>
+        <p><b>Pembayaran:</b> <span id="payment">-</span></p>
+    </div>
+
+    <button class="pay-btn" id="payBtn">Konfirmasi Pembayaran</button>
+
+</section>
+
+<script>
+// ========== AMBIL DATA DARI URL ==========
+const params = new URLSearchParams(window.location.search);
+
+const game       = params.get("game") || "-";
+const userID     = params.get("id") || "-";
+const userZone   = params.get("zone") || ""; // MLBB only
+const nominal    = params.get("nominal") || "-";
+const price      = params.get("price") || "0";
+const payment    = params.get("pay") || "-";
+const serviceID  = params.get("service_id"); // IMPORTANT!
+
+// Format rupiah
+function formatRupiah(angka) {
+    return "Rp " + parseInt(angka).toLocaleString("id-ID");
+}
+
+// Masukkan ke UI
+document.getElementById("game").innerText   = game;
+document.getElementById("userid").innerText = userID;
+document.getElementById("zone").innerText   = userZone || "-";
+document.getElementById("nominal").innerText = nominal;
+document.getElementById("price").innerText = formatRupiah(price);
+document.getElementById("payment").innerText = payment;
+
+
+// =============== ORDER API ===============
+async function payNow() {
+
+    document.getElementById("payBtn").innerText = "Memproses...";
+    document.getElementById("payBtn").disabled = true;
+
+    try {
+        const response = await fetch("/api/order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                service: serviceID,
+                data_no: userID,
+                data_zone: userZone || ""
+            })
+        });
+
+        const result = await response.json();
+        console.log("ORDER RESULT:", result);
+
+        if (result.status === true) {
+            alert("ORDER BERHASIL! Pesanan sedang diproses 🚀");
+        } else {
+            alert("GAGAL ORDER : " + (result.msg || "Unknown error"));
+        }
+
+    } catch (error) {
+        alert("Terjadi kesalahan server");
+        console.error(error);
+    }
+
+    document.getElementById("payBtn").innerText = "Konfirmasi Pembayaran";
+    document.getElementById("payBtn").disabled = false;
+}
+
+document.getElementById("payBtn").addEventListener("click", payNow);
+</script>
+
+</body>
+</html>
